@@ -10,9 +10,9 @@ export function SiteFooter() {
   const { t } = useLanguage();
 
   const legalLinks = [
-    { href: "/contacto", label: t.footer.legal.privacy },
-    { href: "/contacto", label: t.footer.legal.terms },
-    { href: "/contacto", label: t.footer.legal.refund },
+    { href: "/privacidad", label: t.footer.legal.privacy },
+    { href: "/terminos", label: t.footer.legal.terms },
+    { href: "/reembolsos", label: t.footer.legal.refund },
   ];
 
   return (

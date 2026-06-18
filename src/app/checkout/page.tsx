@@ -39,19 +39,19 @@ export default function CheckoutPage() {
 
   // --- Funciones para formatear la tarjeta ---
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value.replace(/\D/g, ""); // Remueve letras
-    val = val.substring(0, 16); // Máximo 16 dígitos
-    val = val.replace(/(\d{4})(?=\d)/g, "$1 "); // Agrega espacio cada 4
+    let val = e.target.value.replace(/\D/g, ""); // Aquí sí usamos let porque se reasigna abajo
+    val = val.substring(0, 16);
+    val = val.replace(/(\d{4})(?=\d)/g, "$1 ");
     update("cardNumber", val);
   };
 
   const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value;
+    const val = e.target.value; // CORREGIDO: cambiado a const
     if ((e.nativeEvent as InputEvent).inputType === 'deleteContentBackward') {
       update("expiry", val);
       return;
     }
-    let v = val.replace(/\D/g, "").substring(0, 4); // Max 4 dígitos
+    let v = val.replace(/\D/g, "").substring(0, 4);
     if (v.length >= 3) {
       v = `${v.substring(0, 2)} / ${v.substring(2)}`;
     } else if (v.length === 2) {
@@ -61,7 +61,7 @@ export default function CheckoutPage() {
   };
 
   const handleCvcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value.replace(/\D/g, "").substring(0, 4); // CVC de 3 o 4 (Amex)
+    const val = e.target.value.replace(/\D/g, "").substring(0, 4); // CORREGIDO: cambiado a const
     update("cvc", val);
   };
   // -------------------------------------------
@@ -127,7 +127,7 @@ export default function CheckoutPage() {
     }
   }
 
-  // Pantalla de Éxito (Sin número de operación)
+  // Pantalla de Éxito
   if (placed) {
     return (
       <section className="bg-cream py-24 lg:py-32">
@@ -276,6 +276,11 @@ export default function CheckoutPage() {
               </div>
 
               <div className="mt-2 rounded-xl bg-background p-4 border border-pine/10">
+                <div className="mb-4 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-espresso">{t.checkoutPage.summary.cardLabel}</span>
+                  <img src="/logo-octano-2.png" alt="Octano Payments" className="h-5 object-contain" />
+                </div>
+                
                 <div className="rounded-lg border border-pine/10 bg-card p-5 shadow-sm">
                   <div className="mb-5 flex items-center justify-between">
                     <span className="font-display text-lg uppercase tracking-wider text-pine font-bold leading-tight">

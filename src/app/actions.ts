@@ -6,19 +6,61 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const adminEmail =  "info@Softurix.com";
 
+export interface ContactData {
+  nombre: string;
+  email: string;
+  asunto?: string;
+  mensaje: string;
+}
+
+export interface CartItem {
+  title: string;
+  price: number;
+  quantity: number;
+  slug: string;
+}
+
+export interface PaymentPayload {
+  contact: {
+    nombre: string;
+    apellidos: string;
+    email: string;
+    telefono: string;
+  };
+  billing: {
+    pais: string;
+    calle: string;
+    colonia: string;
+    ciudad: string;
+    estado: string;
+    cp: string;
+  };
+  order: {
+    notas: string;
+  };
+  card: {
+    titular: string;
+    number: string;
+    expiry: string;
+    cvc: string;
+  };
+  items: CartItem[];
+  total: number;
+}
+
 // --- DICCIONARIOS PARA CORREOS ---
 const emailDict = {
   es: {
-    contactSubjectUser: "Hemos recibido tu mensaje - Softurix",
+    contactSubjectUser: "Hemos recibido tu mensaje - Talentrika",
     contactSubjectAdmin: "Nuevo mensaje de contacto",
-    purchaseSubjectUser: "Confirmación de tu pedido - Softurix",
+    purchaseSubjectUser: "Confirmación de tu pedido - Talentrika",
     purchaseSubjectAdmin: "Nueva venta procesada",
     greeting: "Hola",
   },
   en: {
-    contactSubjectUser: "We have received your message - Softurix",
+    contactSubjectUser: "We have received your message - Talentrika",
     contactSubjectAdmin: "New contact message",
-    purchaseSubjectUser: "Order Confirmation - Softurix",
+    purchaseSubjectUser: "Order Confirmation - Talentrika",
     purchaseSubjectAdmin: "New sale processed",
     greeting: "Hello",
   },
@@ -28,7 +70,7 @@ const emailDict = {
 // 1. ACCIÓN: ENVIAR CORREO DE CONTACTO
 // ==========================================
 export async function sendContactEmail(
-  data: { nombre: string; email: string; asunto: string; mensaje: string },
+  data: ContactData,
   lang: "es" | "en"
 ) {
   const t = emailDict[lang];
@@ -36,7 +78,7 @@ export async function sendContactEmail(
   try {
     // Correo al Admin
     await resend.emails.send({
-      from: "Softurix <info@softurix.com>",
+      from: "Softurix <info@Softurix.com>",
       to: [adminEmail],
       subject: `${t.contactSubjectAdmin}: ${data.asunto || "Sin asunto"}`,
       html: `<p><strong>Nombre:</strong> ${data.nombre}</p>
@@ -47,7 +89,7 @@ export async function sendContactEmail(
 
     // Correo al Usuario
     await resend.emails.send({
-      from: "Softurix <info@softurix.com>",
+      from: "Softurix <info@Softurix.com>",
       to: [data.email],
       subject: t.contactSubjectUser,
       html: `<p>${t.greeting} ${data.nombre},</p>
@@ -64,10 +106,10 @@ export async function sendContactEmail(
 }
 
 // ==========================================
-// 2. ACCIÓN: PROCESAR PAGO CON OCTANO Y CORREO
+// 2. PROCESAR PAGO CON OCTANO Y CORREO
 // ==========================================
 export async function processPayment(
-  data: any,
+  data: PaymentPayload,
   lang: "es" | "en"
 ) {
   const t = emailDict[lang];
@@ -82,7 +124,7 @@ export async function processPayment(
       method: "POST",
       headers: {
         "Accept": "application/json",
-        "Content-Type": "application/x-www-form-urlencoded", // Requerido por Octano
+        "Content-Type": "application/x-www-form-urlencoded",
       },
       body: authParams.toString(),
     });
@@ -104,7 +146,7 @@ export async function processPayment(
       body: JSON.stringify({
         cardData: {
           cardNumber: data.card.number.replace(/\s/g, ""),
-          cardholderName: data.card.titular, // <--- Actualizado para usar el nombre del titular
+          cardholderName: data.card.titular,
           expirationMonth: month.trim(),
           expirationYear: year.trim().length === 2 ? `20${year.trim()}` : year.trim(),
         }
@@ -116,38 +158,36 @@ export async function processPayment(
 
     // 3. Procesar Venta
     const orderId = `TLK-${Math.floor(100000 + Math.random() * 900000)}`;
-    
-    // Concatenar la calle y la colonia para enviarlo a Octano
     const fullAddress = data.billing.colonia 
       ? `${data.billing.calle}, ${data.billing.colonia}` 
       : data.billing.calle;
-
+    
     const salePayload = {
       amount: data.total,
-      currency: 484, // MXN
+      currency: 484, // Código para MXN
       reference: orderId,
       customerInformation: {
-        firstName: data.contact.nombre,           // <--- Separado
-        lastName: data.contact.apellidos,         // <--- Separado
+        firstName: data.contact.nombre,
+        lastName: data.contact.apellidos,
         email: data.contact.email,
         phone1: data.contact.telefono,
         city: data.billing.ciudad,
-        address1: fullAddress,                    // <--- Calle + Colonia
+        address1: fullAddress,
         postalCode: data.billing.cp,
-        state: data.billing.estado,               // <--- Estado agregado
-        country: data.billing.pais === "México" ? "Mx" : data.billing.pais, // <--- País agregado
+        state: data.billing.estado,
+        country: data.billing.pais === "México" ? "Mx" : data.billing.pais,
       },
       cardData: {
         cardNumberToken: cardTokenData.cardNumberToken,
         cvv: data.card.cvc,
       },
-      items: data.items.map((item: any) => ({
+      items: data.items.map((item: CartItem) => ({
         title: item.title,
         amount: item.price,
         quantity: item.quantity,
         id: item.slug,
       })),
-      redirectUrl: "https://Softurix.com/checkout", // Ajusta a tu URL de producción
+      redirectUrl: "https://talentrika.com/checkout", // Ajusta a tu URL de producción
     };
 
     const saleRes = await fetch("https://pagos.octanopayments.com/api/v1/sale", {
@@ -167,22 +207,23 @@ export async function processPayment(
     }
 
     // 4. Enviar Correos de Confirmación
-    const itemsHtml = data.items.map((i: any) => `<li>${i.quantity}x ${i.title} - $${i.price}</li>`).join("");
+    const itemsHtml = data.items.map((i: CartItem) => `<li>${i.quantity}x ${i.title} - $${i.price}</li>`).join("");
 
     // Admin Email
     await resend.emails.send({
-      from: "Softurix Ventas <info@softurix.com>",
+      from: "Talentrika Ventas <no-reply@talentrika.com>",
       to: [adminEmail],
       subject: `${t.purchaseSubjectAdmin} - ${orderId}`,
       html: `<h2>Nueva Venta: ${orderId}</h2>
-             <p><strong>Cliente:</strong> ${data.contact.nombre} (${data.contact.email})</p>
+             <p><strong>Cliente:</strong> ${data.contact.nombre} ${data.contact.apellidos} (${data.contact.email})</p>
              <p><strong>Total:</strong> MXN $${data.total}</p>
-             <ul>${itemsHtml}</ul>`,
+             <ul>${itemsHtml}</ul>
+             <p><strong>Notas del pedido:</strong> ${data.order.notas || "Ninguna"}</p>`,
     });
 
     // User Email
     await resend.emails.send({
-      from: "Softurix <info@softurix.com>",
+      from: "Talentrika <no-reply@talentrika.com>",
       to: [data.contact.email],
       subject: t.purchaseSubjectUser,
       html: `<h2>${t.greeting} ${data.contact.nombre},</h2>
