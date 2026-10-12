@@ -278,7 +278,7 @@ export default function CheckoutPage() {
               <div className="mt-2 rounded-xl bg-background p-4 border border-pine/10">
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-sm font-semibold text-espresso">{t.checkoutPage.summary.cardLabel}</span>
-                  <img src="/logo-octano-2.png" alt="Octano Payments" className="h-5 object-contain" />
+                  <img src="/etomin_logo.svg" alt="Etomin" className="h-5 object-contain" />
                 </div>
                 
                 <div className="rounded-lg border border-pine/10 bg-card p-5 shadow-sm">
@@ -286,7 +286,7 @@ export default function CheckoutPage() {
                     <span className="font-display text-lg uppercase tracking-wider text-pine font-bold leading-tight">
                       {t.checkoutPage.summary.paymentInfo}
                     </span>
-                    <img src="/logo-octano-2.png" alt="Octano" className="h-8 object-contain" />
+                    <img src="/etomin_secbadge.svg" alt="Etomin" className="h-6 object-contain" />
                   </div>
 
                   <div className="space-y-4">
